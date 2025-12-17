@@ -1,10 +1,9 @@
-from flask import Flask
+from fastapi import FastAPI
+import uvicorn
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+@app.get("/")
+def read_root():
+    return "Hello WOrld"
 
-if __name__ == "__main__":
-    app.run(debug=True)
