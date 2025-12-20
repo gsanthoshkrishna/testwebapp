@@ -2,3 +2,7 @@ flask
 gunicorn
 uvicorn
 fastapi
+jinja2
+openai
+azure-search-documents
+python-dotenv
