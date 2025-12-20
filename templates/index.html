@@ -57,7 +57,7 @@ function sendMessage() {
     })
     .then(res => res.json())
     .then(data => {
-        chatBox.innerHTML += `<div class="bot"><b>Bot:</b> ${data.reply}</div>`;
+        chatBox.innerHTML += `<div class="bot"><b>Bot:</b> ${data.answer}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
     });
 

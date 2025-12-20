@@ -89,24 +89,12 @@ def generate_answer(question: str, context: str) -> str:
         model=AZURE_OPENAI_CHAT_DEPLOYMENT,
         messages=[
             {
-                "role": "user",
-                "content": f"My question is {question}. Can you make this question to cover broader. make three more additional questions so that my docs will not miss it."
-            }
-        ]
-    )
-    print("Updated question:"+response.choices[0].message.content)
-    
-
-    response2 = openai_client.chat.completions.create(
-        model=AZURE_OPENAI_CHAT_DEPLOYMENT,
-        messages=[
-            {
                 "role": "system",
                 "content": "Answer ONLY from the provided context. If not found, say 'Not available in knowledge base.'"
             },
             {
                 "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion:\n{response.choices[0].message.content}"
+                "content": f"Context:\n{context}\n\nQuestion:\n{question}"
             }
         ]
     )
