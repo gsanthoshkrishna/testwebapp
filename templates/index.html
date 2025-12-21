@@ -50,14 +50,14 @@ function sendMessage() {
     const chatBox = document.getElementById("chat-box");
     chatBox.innerHTML += `<div class="user"><b>You:</b> ${message}</div>`;
 
-    fetch("/chat", {
+    fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message })
+        body: JSON.stringify({ question: message })
     })
     .then(res => res.json())
     .then(data => {
-        chatBox.innerHTML += `<div class="bot"><b>Bot:</b> ${data.reply}</div>`;
+        chatBox.innerHTML += `<div class="bot"><b>Bot:</b> ${data.answer}</div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
     });
 
