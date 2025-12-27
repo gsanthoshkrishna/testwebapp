@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+from flask import Flask, flash, render_template, request, redirect, url_for, session, jsonify
+import mysql.connector, time, sys, json
+from datetime import date, datetime
+from flask_session import Session
 
 from pydantic import BaseModel
 from openai import AzureOpenAI
@@ -8,13 +9,14 @@ from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 from dotenv import load_dotenv
 
-import os
+import os,uuid,json
 
 import uvicorn
 
+app = Flask(__name__)
+
 load_dotenv()
-debug_output = False
-app = FastAPI()
+debug_output = True
 
 
 ##############################################################################
@@ -101,63 +103,61 @@ def generate_answer(question: str, context: str) -> str:
     debug_msg(response.choices)
     return response.choices[0].message.content
 
-@app.post("/ask")
-async def ask_question(req: QuestionRequest):
-    print(req.question)
-    context = retrieve_context(req.question)
-    debug_msg("========Context=============")
-    debug_msg(context)
-    debug_msg("==========-------===========")
-    answer = generate_answer(req.question, context)
-    print("----------answere-----------")
-    print(answer)
+@app.route('/ask', methods=['GET', 'POST'])
+def ask_question():
+    if request.method == "POST":
+        data = request.get_json()
+        question = data.get("question")
+        debug_msg("Question"+question)
+        context = retrieve_context(question)
+        answer = generate_answer(question, context)
+        return jsonify({"question": question,"answer": answer})
+            
 
-    return {
-        "question": req.question,
-        "answer": answer
-    }
-
-
-##############################################################################
-
-templates = Jinja2Templates(directory="templates")
-
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.route('/triam-ai')
+def triam_ai():
+    return render_template("index.html")
 
 def debug_msg(msg):
     if debug_output == True:
         print(msg)
 
 
-def upload_ai_docs(client, file_path):
+def upload_ai_docs(client, file_path,openaiclient):
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
 
+    embedding2 = openai_client.embeddings.create(
+        model=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT"),
+        input=content
+    ).data[0].embedding
+
     doc = {
-        "id": str(uuid.uuid4()),
-        "content": content
+        "id": "dms",
+        "content": content,
+        "embedding": embedding2
     }
 
     client.upload_documents(documents=[doc])
     print("TXT file uploaded")
 
 
-@app.route("/upload", methods=["POST"])
-def upload_ai_file():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
+@app.route('/update-ai-doc', methods=['GET', 'POST'])
+def update_ai_doc():
+    content = file.read()
+    embedding2 = openai_client.embeddings.create(
+        model=deployment,
+        input=content
+    ).data[0].embedding
+    doc = {
+        "id": "dms",
+        "content": content,
+        "embedding": embedding2
+    }
+    search_client.upload_documents(documents=[doc])
+    print("TXT file uploaded")
+    
+    return jsonify({"message": "File uploaded successfully"})
 
-    file = request.files["file"]
-
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-    file.save(filepath)
-    upload_ai_docs(search_client,filepath)
-    debug_msg("File uploaded successfully")
-
-    return jsonify({"message": f"File '{file.filename}' uploaded successfully"})
-
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
